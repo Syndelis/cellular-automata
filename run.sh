@@ -1,0 +1,1 @@
+./main wolfram 30
