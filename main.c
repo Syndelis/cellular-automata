@@ -18,7 +18,6 @@ int main(int argc, char **argv) {
         int domain_length = 0;
         Cell **domain = initDomain(rule, &domain_length);
         Cell **new;
-        printf("foi main\n");
 
         int times = argc > 3 ? atoi(argv[3]) : 10;
         int i, j;
