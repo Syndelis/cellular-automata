@@ -1,4 +1,5 @@
 #include "ac.h"
+#include "wolfram.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -12,32 +13,11 @@ Cell **applyRule(Cell **domain, int domain_length, GeneralRule *rule) {
 
     switch (rule->type) {
         case typeWolfram:
-            for (i = 0; i < domain_length; i++) {
-                if (i == 0)
-                    (*new)[i].state = rule->wolfram->behavior[
-                        2*((*domain)[i].state) + (*domain)[i+1].state
-                    ];
-                else if (i == domain_length-1)
-                    (*new)[i].state = rule->wolfram->behavior[
-                        4*((*domain)[i-1].state) + 2*((*domain)[i].state)
-                    ];
-                else
-                    (*new)[i].state = rule->wolfram->behavior[
-                        4*((*domain)[i-1].state) +
-                        2*((*domain)[i].state) +
-                           (*domain)[i+1].state
-                    ];
-            }
+            _applyWolframRule(domain, domain_length, rule->wolfram, new);
             break;
     }
 
     return new;
-}
-
-void _initRuleWolfram(GeneralRule *target, int rule_number) {
-    int i;
-    for (i = 0; i < 8; i++)
-        target->wolfram->behavior[i] = ((1 << i) & rule_number) > 0;
 }
 
 GeneralRule *initRule(int type, void *param) {
@@ -46,7 +26,7 @@ GeneralRule *initRule(int type, void *param) {
         case typeWolfram:
             target->type = typeWolfram;
             target->wolfram = (WolframRule*)malloc(sizeof(WolframRule));
-            _initRuleWolfram(target, *(int*)param);
+            _initRuleWolfram(target->wolfram, *(int*)param);
             break;
 
         default:

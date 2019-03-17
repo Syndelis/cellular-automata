@@ -26,6 +26,8 @@ int main(int argc, char **argv) {
 
             for (j = 0; j < domain_length; j++)
                 (*domain)[j].state = (*new)[j].state;
+
+            free(new);
         }
 
         // Needs a function to free all data from the domain
