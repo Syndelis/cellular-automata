@@ -13,7 +13,7 @@ Cell **applyRule(Cell **domain, int domain_length, GeneralRule *rule) {
 
     switch (rule->type) {
         case typeWolfram:
-            _applyWolframRule(domain, domain_length, rule->wolfram, new);
+            _applyRuleWolfram(domain, domain_length, rule->wolfram, new);
             break;
     }
 
@@ -57,6 +57,16 @@ Cell **initDomain(GeneralRule *rule, int *domain_length) {
     }
 
     return domain;
+}
+
+void freeDomain(Cell **domain, int domain_length, GeneralRule *rule) {
+    switch (rule->type) {
+        case typeWolfram:
+            _freeDomainWolfram(domain, domain_length);
+            break;
+        default:
+            break;
+    }
 }
 
 void _displayDomain(Cell **domain, int domain_length) {

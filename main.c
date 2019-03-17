@@ -31,6 +31,7 @@ int main(int argc, char **argv) {
         }
 
         // Needs a function to free all data from the domain
+        freeDomain(domain, domain_length, rule);
     }
     else printf(
             "Insufficient number of parameters. "
