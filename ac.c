@@ -1,5 +1,5 @@
 #include "ac.h"
-#include "wolfram.h"
+#include "rulesets/wolfram.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -8,14 +8,17 @@ Cell **applyRule(Cell **domain, int domain_length, GeneralRule *rule) {
     // the new state, based on the GeneralRule being used
 
     int i;
-    _displayDomain(domain, domain_length);
     Cell **new = initDomain(rule, &i); // dummy 'i'
 
     switch (rule->type) {
         case typeWolfram:
             _applyRuleWolfram(domain, domain_length, rule->wolfram, new);
             break;
+
+        case typeConway:
+            _applyRuleConway(rule->conway);
     }
+    _displayDomain(domain, domain_length);
 
     return new;
 }
@@ -27,6 +30,12 @@ GeneralRule *initRule(int type, void *param) {
             target->type = typeWolfram;
             target->wolfram = (WolframRule*)malloc(sizeof(WolframRule));
             _initRuleWolfram(target->wolfram, *(int*)param);
+            break;
+
+        case typeConway:
+            target->type = typeConway;
+            target->conway = (ConwayRule*)malloc(sizeof(ConwayRule));
+            _initRuleConway(target->conway);
             break;
 
         default:
@@ -64,6 +73,8 @@ void freeDomain(Cell **domain, int domain_length, GeneralRule *rule) {
         case typeWolfram:
             _freeDomainWolfram(domain, domain_length);
             break;
+        case typeConway:
+            _freeDomainConway(rule->conway);
         default:
             break;
     }

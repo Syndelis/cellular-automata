@@ -5,7 +5,7 @@
 
 int main(int argc, char **argv) {
     // the main program only processes wolfram ACs at the moment
-    if (argc >= 3) {
+    if (argc >= 2) {
         GeneralRule *rule;
 
         if (strcmp(argv[1], "wolfram") == 0) {
@@ -14,6 +14,10 @@ int main(int argc, char **argv) {
             rule = initRule(typeWolfram, rule_number);
 
             free(rule_number);
+        }
+        else if (strcmp(argv[1], "conway") == 0) {
+            void *_;
+            rule = initRule(typeConway, _); // falta parametro
         }
         int domain_length = 0;
         Cell **domain = initDomain(rule, &domain_length);

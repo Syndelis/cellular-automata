@@ -11,12 +11,14 @@ typedef struct _Cell {
     // More to be added
 } Cell;
 
-#include "wolfram.h"
+#include "rulesets/wolfram.h"
+#include "rulesets/conway.h"
 
 typedef struct _GeneralRule {
     int type;
     union {
         WolframRule *wolfram;
+        ConwayRule *conway;
     };
 } GeneralRule;
 
