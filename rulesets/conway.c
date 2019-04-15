@@ -41,7 +41,7 @@ void _displayRuleConway(ConwayRule *rule) {
     int i, j;
     char str[2];
 
-    sleep(1);
+    usleep(125000);
     system("clear");
 
     for (i = 0; i < 32; i++) {

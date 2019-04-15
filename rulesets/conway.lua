@@ -8,7 +8,7 @@ function conway:onInit()
     for i=1, 32 do
         self.domain[i] = {}
         for j=1, 32 do
-            self.domain[i][j] = (math.random(0, 4) == 0 and 0 or 1)
+            self.domain[i][j] = (math.random(0, 2) == 0 and 0 or 1)
         end
     end
     self.rule =
