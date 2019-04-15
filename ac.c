@@ -8,17 +8,17 @@ Cell **applyRule(Cell **domain, int domain_length, GeneralRule *rule) {
     // the new state, based on the GeneralRule being used
 
     int i;
-    Cell **new = initDomain(rule, &i); // dummy 'i'
-
+    Cell **new = NULL;
     switch (rule->type) {
         case typeWolfram:
+            new = initDomain(rule, &i); // dummy 'i'
             _applyRuleWolfram(domain, domain_length, rule->wolfram, new);
+            _displayDomain(domain, domain_length);
             break;
 
         case typeConway:
             _applyRuleConway(rule->conway);
     }
-    _displayDomain(domain, domain_length);
 
     return new;
 }
@@ -62,6 +62,7 @@ Cell **initDomain(GeneralRule *rule, int *domain_length) {
             break;
 
         default:
+            *domain_length = 0;
             break;
     }
 

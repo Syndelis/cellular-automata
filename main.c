@@ -27,14 +27,12 @@ int main(int argc, char **argv) {
         int i, j;
         for (i = 0; i < times; i++) {
             new = applyRule(domain, domain_length, rule);
-
             for (j = 0; j < domain_length; j++)
                 (*domain)[j].state = (*new)[j].state;
 
-            free(new);
+            if (new != NULL) free(new);
         }
 
-        // Needs a function to free all data from the domain
         freeDomain(domain, domain_length, rule);
     }
     else printf(
