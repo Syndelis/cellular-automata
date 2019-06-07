@@ -1,5 +1,5 @@
 # ignore VSCode directory
-/.code/
+/.vscode/
 
 # ignore possibly built binary
 main
