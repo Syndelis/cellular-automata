@@ -19,6 +19,7 @@ int main(int argc, char **argv) {
             void *_;
             rule = initRule(typeConway, _); // falta parametro
         }
+
         int domain_length = 0;
         Cell **domain = initDomain(rule, &domain_length);
         Cell **new;
@@ -30,10 +31,11 @@ int main(int argc, char **argv) {
             for (j = 0; j < domain_length; j++)
                 (*domain)[j].state = (*new)[j].state;
 
-            if (new != NULL) free(new);
+            if (new != NULL) freeDomain(new, domain_length, rule);
         }
 
         freeDomain(domain, domain_length, rule);
+        freeRule(rule);
     }
     else printf(
             "Insufficient number of parameters. "

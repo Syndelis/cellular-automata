@@ -27,6 +27,7 @@ GeneralRule *initRule(int type, void* param);
 
 Cell **initDomain(GeneralRule *rule, int *domain_length);
 void freeDomain(Cell **domain, int domain_length, GeneralRule *rule);
+void freeRule(GeneralRule *rule);
 void _displayDomain(Cell **domain, int domain_length);
 
 #endif

@@ -81,6 +81,20 @@ void freeDomain(Cell **domain, int domain_length, GeneralRule *rule) {
     }
 }
 
+void freeRule(GeneralRule *rule) {
+    switch (rule->type) {
+        case typeWolfram:
+            free(rule->wolfram);
+            break;
+
+        case typeConway:
+            free(rule->conway);
+            break;
+    }
+
+    free(rule);
+}
+
 void _displayDomain(Cell **domain, int domain_length) {
     int i;
     for (i = 0; i < domain_length; i++)
