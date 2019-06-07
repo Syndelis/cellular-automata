@@ -1,6 +1,9 @@
-#include "../lua_src/lua.h"
-#include "../lua_src/lualib.h"
-#include "../lua_src/lauxlib.h"
+// #include "../lua_src/lua.h"
+// #include "../lua_src/lualib.h"
+// #include "../lua_src/lauxlib.h"
+#include <lua5.3/lua.h>
+#include <lua5.3/lualib.h>
+#include <lua5.3/lauxlib.h>
 #include "../ac.h"
 #include "conway.h"
 #include <stdio.h>
