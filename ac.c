@@ -11,7 +11,7 @@ Cell **applyRule(Cell **domain, int domain_length, GeneralRule *rule) {
     Cell **new = NULL;
     switch (rule->type) {
         case typeWolfram:
-            new = initDomain(rule, &i); // dummy 'i'
+            new = initDomain(rule, &domain_length);
             _applyRuleWolfram(domain, domain_length, rule->wolfram, new);
             _displayDomain(domain, domain_length);
             break;
@@ -23,19 +23,19 @@ Cell **applyRule(Cell **domain, int domain_length, GeneralRule *rule) {
     return new;
 }
 
-GeneralRule *initRule(int type, void *param) {
+GeneralRule *initRule(int type, void **param) {
     GeneralRule *target = (GeneralRule*)malloc(sizeof(GeneralRule));
     switch (type) {
         case typeWolfram:
             target->type = typeWolfram;
             target->wolfram = (WolframRule*)malloc(sizeof(WolframRule));
-            _initRuleWolfram(target->wolfram, *(int*)param);
+            _initRuleWolfram(target->wolfram, *(int*)param[0]);
             break;
 
         case typeConway:
             target->type = typeConway;
             target->conway = (ConwayRule*)malloc(sizeof(ConwayRule));
-            _initRuleConway(target->conway);
+            _initRuleConway(target->conway, param);
             break;
 
         default:
@@ -50,15 +50,15 @@ Cell **initDomain(GeneralRule *rule, int *domain_length) {
 
     switch (rule->type) {
         case typeWolfram:
-            domain = (Cell**)malloc(sizeof(Cell*));
-            *domain = (Cell*)malloc(sizeof(Cell) * 31); // 0 to 30
+            if (!(*domain_length % 2)) (*domain_length)--;
+            domain = (Cell**) malloc(sizeof(Cell*));
+            *domain = (Cell*) malloc(sizeof(Cell) * *domain_length);
 
             int i;
-            for (i = 0; i < 31; i++)
+            for (i = 0; i < *domain_length; i++)
                 (*domain)[i].state = 0;
 
-            (*domain)[15].state = 1;
-            *domain_length = 31;
+            (*domain)[*domain_length/2].state = 1;
             break;
 
         default:

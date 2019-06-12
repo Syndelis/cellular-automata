@@ -23,7 +23,7 @@ typedef struct _GeneralRule {
 } GeneralRule;
 
 Cell **applyRule(Cell **domain, int domain_length, GeneralRule *rule);
-GeneralRule *initRule(int type, void* param);
+GeneralRule *initRule(int type, void **param);
 
 Cell **initDomain(GeneralRule *rule, int *domain_length);
 void freeDomain(Cell **domain, int domain_length, GeneralRule *rule);
