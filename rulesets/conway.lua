@@ -1,7 +1,5 @@
-math.randomseed(os.time())
-os = nil
+math.randomseed(time())
 conway = {}
-
 
 function conway:onInit(dimensions)
     self.domain = {}
@@ -17,6 +15,7 @@ function conway:onInit(dimensions)
                 if ones < 2 or ones > 3 then return 0
                 else return 1 end
             elseif ones == 3 then return 1
+            else return 0
             end
         end
 end
@@ -32,20 +31,18 @@ function conway:onUpdate()
         end
     end
 
+    zeroes = 0
+
     for i=1, dimensions do
         for j=1, dimensions do
             k = 0
-            for x=-1, 1 do
-                for y=-1, 1 do
-                    if (i+x >= 1 and i+x <= dimensions and j+y >= 1 and j+y <= dimensions) then
-                        k = k + (copy[i+x][j+y] or 0)
-                    end
-                end
-            end
-            k = k - (copy[i][j] or 0)
 
-            self.domain[i][j] =
-                self.rule(copy[i][j], k)
+            neighbors = neighbors8(i, j, copy)
+            for i, v in ipairs(neighbors) do
+                k = k + v
+            end
+
+            self.domain[i][j] = self.rule(copy[i][j], k)
         end
     end
 end

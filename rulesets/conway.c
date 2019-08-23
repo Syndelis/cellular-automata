@@ -41,45 +41,65 @@ void _stackDump(lua_State *L) {
 }
 
 static int _neighbors8(lua_State *L) {
-    int i, j, u, v, k, x, y;
+    int dx, dy, u, v, k, x, y;
+    lua_settop(L, 3);
 
-    x = lua_tonumber(L, -1);
+    lua_setglobal(L, "paramtable");
+    x = lua_tonumber(L, -2);
     y = lua_tonumber(L, -1);
 
     lua_createtable(L, 8, 0);
     lua_setglobal(L, "ret");
 
-    for (k = 1, i = -1, u = 0; i <= 1; i++, u++) {
-        lua_getglobal(L, "ret");
-        lua_getglobal(L, "inst");
-        lua_getfield(L, -1, "domain");
-        lua_pushinteger(L, x+i);
-        lua_gettable(L, -2);
-        for (j = -1, v = 0; j <= 1; j++, v++, k++) {
-            lua_pushinteger(L, y+j);
-            lua_gettable(L, -2 -v);
-            lua_pushinteger(L, k);
-            lua_pushvalue(L, -2);
-            lua_settable(L, -7 -v);
+    for (k = 1, dx = -1, u = 0; dx <= 1; dx++, u++) {
+        for (dy = -1, v = 0; dy <= 1; dy++, v++, k++) {
+            if (!(dx == 0 && dy == 0)) {
+                lua_settop(L, 0);
+                lua_getglobal(L, "ret");
+                lua_pushinteger(L, k);
+
+                lua_getglobal(L, "paramtable");
+                lua_pushinteger(L, x+dx);
+                lua_gettable(L, -2); // Retrieves the array in the x+dx row of the matrix
+
+                if (lua_type(L, -1) == LUA_TNIL) lua_pushnil(L);
+                else {
+                    lua_pushinteger(L, y+dy);
+                    lua_gettable(L, -2);
+                }
+
+                // _stackDump(L);
+
+                lua_remove(L, 3);
+                lua_remove(L, 3);
+
+                lua_settable(L, 1);
+            } else k--;
         }
-        lua_settop(L, 0);
     }
+    lua_settop(L, 0);
 
     lua_getglobal(L, "ret");
 
-    // new block, may cause problems
     lua_pushnil(L);
     lua_setglobal(L, "ret");
-    lua_pushvalue(L, -2);
+    
+    lua_pushvalue(L, -1);
     return 1;
 }
 
 void _initLuaEnv(lua_State *L) {
+    lua_getglobal(L, "os");
+    lua_getfield(L, -1, "time");
+    lua_setglobal(L, "time");
+
     lua_pushnil(L);
     lua_setglobal(L, "os");
 
     lua_pushcfunction(L, _neighbors8);
     lua_setglobal(L, "neighbors8");
+    lua_getglobal(L, "neighbors8");
+    lua_setglobal(L, "neighbours8");
 }
 
 void _initRuleConway(ConwayRule *target, void **param) {
@@ -88,7 +108,7 @@ void _initRuleConway(ConwayRule *target, void **param) {
 
     target->L = luaL_newstate();
     luaL_openlibs(target->L);
-    _initLuaEnv(target->L); // new compared to master
+    _initLuaEnv(target->L);
     luaL_dofile(target->L, (char*)param[1]);
     lua_setglobal(target->L, "conway");
     lua_settop(target->L, 0);
@@ -100,7 +120,7 @@ void _initRuleConway(ConwayRule *target, void **param) {
     lua_getfield(target->L, -1, "onInit");
     lua_getglobal(target->L, "inst");
     lua_pushinteger(target->L, target->dimensions);
-    lua_call(target->L, 2, 0); // Breaking the program
+    lua_call(target->L, 2, 0);
     lua_settop(target->L, 0);
 }
 
@@ -138,7 +158,6 @@ void _displayRuleConway(ConwayRule *rule) {
         lua_settop(rule->L, 0);
         printf("\033[m\n");
     }
-
 }
 
 void _freeDomainConway(ConwayRule *rule) {
