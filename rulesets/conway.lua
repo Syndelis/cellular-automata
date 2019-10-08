@@ -37,7 +37,7 @@ function conway:onUpdate()
         for j=1, dimensions do
             k = 0
 
-            neighbors = neighbors8(i, j, copy)
+            neighbors = neighbors8(i, j, copy)--, function (b) return b == 1 end)
             for i, v in ipairs(neighbors) do
                 k = k + v
             end
