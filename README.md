@@ -1,6 +1,6 @@
 # cellular-automata
 
-Dependencies: lualib5.3-dev
+Dependencies: python3-dev
 
 # Compiling
 
