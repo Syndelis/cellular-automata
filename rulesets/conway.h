@@ -1,12 +1,11 @@
 #ifndef CONWAY_HEADER
 #define CONWAY_HEADER
 
-#include <lua5.3/lua.h>
-#include <lua5.3/lualib.h>
-#include <lua5.3/lauxlib.h>
+#define PY_SSIZE_T_CLEAN
+#include <python3.7m/Python.h>
 
 typedef struct _ConwayRule {
-    lua_State *L;
+    PyObject *pModule;
     int dimensions;
 } ConwayRule;
 
