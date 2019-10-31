@@ -34,7 +34,7 @@ class SIR(CA):
         return b"\033[%dm  \033[m" % (41+self[x][y])
 
 c = SIR(30, values=(1, 1, 1, 1, 1, 0, 2))
-for i in range(100):
+while not c.stationary():
     draw(c)
     step(c)
     sleep(0.3)

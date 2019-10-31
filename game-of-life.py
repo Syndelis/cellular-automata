@@ -7,7 +7,7 @@ class CGL(CA):
 
 c = CGL(30)
 
-for i in range(100):
+while not c.stationary():
     draw(c)
     step(c)
     sleep(0.15)

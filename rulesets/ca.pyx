@@ -48,7 +48,7 @@ cdef class CA:
 
                 for j in range(0, size):
                     self.domain[i][j] = rand()%values
-                    self.old[i][j] = self.domain[i][j]
+                    self.old[i][j] = 0
 
         elif isinstance(values, Iterable):
             k = len(values)
@@ -58,7 +58,7 @@ cdef class CA:
 
                 for j in range(0, size):
                     self.domain[i][j] = values[rand()%k]
-                    self.old[i][j] = self.domain[i][j]
+                    self.old[i][j] = 0
 
         else: raise TypeError(
             "`values` parameter must be either an int or "
@@ -74,6 +74,16 @@ cdef class CA:
 
     cpdef bytes prettyPrint(self, x, y):
         return b"%d " % self.domain[x][y]
+
+    cpdef int stationary(self):
+        cdef int i, j
+
+        for i in range(0, self.domain_size):
+            for j in range(0, self.domain_size):
+                if (self.domain[i][j] != self.old[i][j]):
+                    return False
+
+        return True
 
     def rule(self, x, y):
         """
