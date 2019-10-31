@@ -122,8 +122,7 @@ cdef class CA:
                 # print(f"Running for [{i}][{j}]")
                 self.domain[i][j] = self.rule(i, j)
 
-    def __neighbors8__(self, x, y, old=False):
-        # print(f"Received neighbors for {x},{y}")
+    cpdef list __neighbors8__(self, x, y, old=False):
         if old:
             return [
                 self.old[i+x][j+y] for i in range(-1, 2) for j in range(-1, 2)
@@ -133,6 +132,7 @@ cdef class CA:
                     and (j+y >= 0 and j+y < self.domain_size)
                 )
             ]
+
         else:
             return [
                 self.domain[i+x][j+y] for i in range(-1, 2) for j in range(-1, 2)
@@ -157,6 +157,6 @@ cpdef void step(obj):
 
 cpdef list neighbors8(obj, x, y, old=False):
     if isinstance(obj, CA):
-        obj.__neighbors8__(x, y, old=old)
+        return obj.__neighbors8__(x, y, old=old)
 
     else: raise TypeError("Object `obj` must be an instance/subclass of CA")
