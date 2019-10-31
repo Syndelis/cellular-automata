@@ -1,5 +1,7 @@
 # ignore VSCode directory
 /.vscode/
+/build/
 
 # ignore possibly built binary
 main
+ca.cpython*.*
