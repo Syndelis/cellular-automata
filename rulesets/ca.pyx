@@ -1,6 +1,6 @@
-from libc.stdlib cimport rand
 from libc.stdio cimport printf, sprintf
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport malloc, free, rand, srand
+from libc.time cimport time
 from collections.abc import Iterable
 from typing import Callable
 
@@ -8,56 +8,38 @@ cdef class CA:
     """
     The Cellular-Automata class for setting up rules, executing and displaying
     results.
-    """
-
-    @staticmethod
-    def defaultRule(self, x, y):
-        """
-        Conway's Game of Life set of rules
-        """
-        # print(f"Received rule for {x},{y}")
-
-        k = sum(self.__neighbors8__(x, y, old=True))
-
-        # print(f"Neighbors returned {k}")
-
-        if self[x][y] == 1:
-            
-            # Any live cell with fewer than 2 or more than 3 neighbors dies,
-            # as if by underpopulation and overpopulation
-            if k < 2 or k > 3: return 0
-            else: return 1
-
-        else:
-
-            # Any dead cell with exactly 3 live neighbors becomes alive,
-            # as if by reproduction
-            if k == 3: return 1
-            else: return 0
-        
+    """ 
 
     cdef int **domain;
     cdef int **old;
     cdef int domain_size;
-    rule: Callable[[CA, int, int], int]
 
-    def __cinit__(self, size, values=2, rule=CA.defaultRule):
+    def __cinit__(self, size, values=2, random=True):
         """
         C-based initialization.
-        CA(self, size: int, values: int=2, rule: function=CA.defaultRule)
+        CA(self, size: int, values: int=2, random=True)
 
         size: Integer representing the desired dimensions of the CA.
         values: Integer representing the amount of different states
             (starting from 0) or Iterable (list, tuple, dict, set, ...)
             of integers containing all desired starting states.
-        rule: 
+        random: Boolean for randomness or fixed seed or Integer for the seed
+            you want to use.
         """
 
         cdef int i, j, k
         self.domain_size = size
         self.domain = <int **> malloc(size * sizeof(int*))
         self.old = <int **> malloc(size * sizeof(int*))
-        self.rule = rule
+        if isinstance(random, bool):
+            if random:
+                srand(time(NULL))
+
+        elif isinstance(random, int):
+            srand(random)
+
+        else:
+            raise TypeError("Argumente `random` should be either bool or int.")
 
         if type(values) == int:
             for i in range(0, size):
@@ -93,6 +75,30 @@ cdef class CA:
     cpdef bytes prettyPrint(self, x, y):
         return b"%d " % self.domain[x][y]
 
+    def rule(self, x, y):
+        """
+        Conway's Game of Life set of rules
+        """
+        # print(f"Received rule for {x},{y}")
+
+        k = sum(self.__neighbors8__(x, y, old=True))
+
+        # print(f"Neighbors returned {k}")
+
+        if self[x][y] == 1:
+            
+            # Any live cell with fewer than 2 or more than 3 neighbors dies,
+            # as if by underpopulation and overpopulation
+            if k < 2 or k > 3: return 0
+            else: return 1
+
+        else:
+
+            # Any dead cell with exactly 3 live neighbors becomes alive,
+            # as if by reproduction
+            if k == 3: return 1
+            else: return 0
+
     cpdef void __draw__(self) except *:
         cdef int i, j
         for i in range(0, self.domain_size):
@@ -114,7 +120,7 @@ cdef class CA:
         for i in range(0, self.domain_size):
             for j in range(0, self.domain_size):
                 # print(f"Running for [{i}][{j}]")
-                self.domain[i][j] = self.rule(self, i, j)
+                self.domain[i][j] = self.rule(i, j)
 
     def __neighbors8__(self, x, y, old=False):
         # print(f"Received neighbors for {x},{y}")
