@@ -15,9 +15,11 @@ ac.o: ac.c ac.h rulesets/wolfram.h rulesets/conway.h
 wolfram.o: rulesets/wolfram.c rulesets/wolfram.h ac.h
 	gcc -g -c rulesets/wolfram.c
 
-conway.o: rulesets/conway.c rulesets/conway.h
+conway.o: rulesets/conway.c rulesets/conway.h cythonModule
 	gcc -g -c rulesets/conway.c -lpython3.7m
-	python3 setup.py build_ext --inplace
+
+cythonModule: rulesets/ca.pyx
+	python3 setup.py build --build-lib .
 
 clear:
 	rm *.o

@@ -3,5 +3,4 @@
 from distutils.core import setup
 from Cython.Build import cythonize
 
-setup(name="Cython class module",
-      ext_modules=cythonize("rulesets/ca.pyx"))
+setup(name='CA base class', ext_modules=cythonize("rulesets/ca.pyx"))
