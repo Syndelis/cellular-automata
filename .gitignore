@@ -5,3 +5,5 @@
 # ignore possibly built binary
 main
 ca.cpython*.*
+/examples/*.pdf
+/rulesets/ca.c

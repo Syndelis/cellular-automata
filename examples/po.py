@@ -12,7 +12,7 @@ from sys import argv
 
 global k, p
 k = 5
-p = 0.8
+p = 1
 
 class PO(CA):
     def rule(self, x, y):
