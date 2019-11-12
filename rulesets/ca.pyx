@@ -18,19 +18,19 @@ cdef class CA:
 
         size: Integer representing the desired dimensions for the CA.
         values: Either an integer or an Iterable used for the initialization of
-            the CA. If an integer, values will be picked from 0..n. 
+            the CA. If an integer, values will be picked from 0..n.
             Whether these values will be assigned to positions randomly is
             defined by the `random_values` parameter
         random_values: Whether the CA should have random values picked for or 0.
         random_seed: Whether a random seed should be picked for random value
             assignment during initialization.
 
-    
+
     In order to fully customize your CA, only the following methods must be
     overwritten: prettyPrint(self, x, y), rule(self, x, y).
     Read about these methods on their respective help.
 
-    """ 
+    """
 
     cdef int **domain;
     cdef int **old;
@@ -117,23 +117,31 @@ cdef class CA:
 
         cdef int i, j
         return [
-            [self.domain[i][j] for i in range(self.domain_size)] 
+            [self.domain[i][j] for i in range(self.domain_size)]
             for j in range(self.domain_size)
         ]
 
-    def getOld(self, ind):
+    def getOld(self, ind, indy=None):
         """
         Returns the column `ind` of the previous state. Used to mimic
         the __getitem__ functionality with self[x][y].
         """
-        return [self.old[ind][i] for i in range(0, self.domain_size)]
+        if not indy:
+            return [self.old[ind][i] for i in range(0, self.domain_size)]
+        else: return self.old[ind][indy]
 
     def __getitem__(self, ind):
         """
         Returns the column `ind` of the current state. This was made so that
         `self[x][y]` becomes the primary way of accessing a value at [x, y].
         """
-        return [self.domain[ind][i] for i in range(0, self.domain_size)]
+        if isinstance(ind, Iterable):
+            return self.domain[ind[0]][ind[1]]
+        elif isinstance(ind, int):
+            return [self.domain[ind][i] for i in range(0, self.domain_size)]
+        else:
+            raise TypeError(f"Parameter `ind` must be either an int or an "
+                             "Iterable. Received `{type(ind)}`")
 
     def __len__(self):
         """
@@ -149,11 +157,20 @@ cdef class CA:
 
         The default return is `b"%%d " %% self[x][y]` which is just the number
         of the state at a given [x, y] followed by a space character.
-        One way of overwritting it would be to return 
+        One way of overwritting it would be to return
         `b"\\033[%%dm  \\033[m" %% (41 + self[x][y])`. With this, you'll be able
         to print colored spaces in a terminal that accepts colors.
         """
         return b"%d " % self.domain[x][y]
+
+    cpdef void move(self, x0, y0, x1, y1, clear=None):
+        cdef int v0 = self.domain[x0][y0]
+        cdef int v1
+        if clear: v1 = clear
+        else: v1 = self.domain[x1][y1]
+
+        self.domain[x0][y0] = v1
+        self.domain[x1][y1] = v0
 
     cpdef int stationary(self):
         """
@@ -181,7 +198,7 @@ cdef class CA:
 
         If you wish to change the set of rules, you are quite likely to need
         information about the neighborhood of the cell at [x, y]. For this
-        purpose, you can use the function `ca.neighbors8(obj, x, y, old=True)` 
+        purpose, you can use the function `ca.neighbors8(obj, x, y, old=True)`
         in order to access them. It's recommended to store the neighborhood in a
         variable to prevent redundant function calls.
         """
@@ -189,7 +206,7 @@ cdef class CA:
         k = sum(self.__neighbors8__(x, y, old=True))
 
         if self[x][y] == 1:
-            
+
             # Any live cell with fewer than 2 or more than 3 neighbors dies,
             # as if by underpopulation and overpopulation
             if k < 2 or k > 3: return 0
@@ -236,7 +253,7 @@ cdef class CA:
     cpdef void __draw__(self) except *:
         """
         Called by function `ca.draw(obj)`.
-        
+
         This function should not be overwritten, as it would cause a dramatic
         slow-down on the program.
         If you wish to modify how values are shown, look into overwritting
@@ -256,7 +273,7 @@ cdef class CA:
         This function should not be overwritten, as it would cause a dramatic
         slow-down on the program.
         If you wish to modify how values are decided, look into overwritting
-        `rule(self, x, y)` instead. 
+        `rule(self, x, y)` instead.
         """
 
         cdef int i, j
@@ -269,7 +286,7 @@ cdef class CA:
             for j in range(0, self.domain_size):
                 self.domain[i][j] = self.rule(i, j)
 
-    cpdef list __neighbors8__(self, x, y, old=False):
+    cpdef list __neighbors8__(self, x, y, old=True, pos=False):
         """
         Called by function `ca.neighbors8`
 
@@ -278,8 +295,14 @@ cdef class CA:
         into adding a new method if you want another type of neighborhood, such
         as neighbors4.
         """
+        if pos:
+            return [
+                ((i+x) % self.domain_size, (j+y) % self.domain_size)
+                for i in range(-1, 2) for j in range(-1, 2)
+                if (not (i == 0 and j == 0))
+            ]
 
-        if old:
+        elif old:
             return [
                 self.old[(i+x) % self.domain_size][(j+y) % self.domain_size]
                 for i in range(-1, 2) for j in range(-1, 2)
@@ -321,13 +344,13 @@ cpdef void step(obj):
 
     else: raise TypeError("Object `obj` must be an instance/subclass of CA")
 
-cpdef list neighbors8(obj, x, y, old=False):
+def neighbors8(obj, x, y, **kwargs):
     """
     Calls obj.__neighbors8__()
     """
 
     if isinstance(obj, CA):
-        return obj.__neighbors8__(x, y, old=old)
+        return obj.__neighbors8__(x, y, **kwargs)
 
     else: raise TypeError("Object `obj` must be an instance/subclass of CA")
 
@@ -362,7 +385,7 @@ try:
                         vmin=min(obj.values), vmax=max(obj.values),
                         origin='lower',cmap=cmap
                     )
-                        
+
                     plt.colorbar()
 
                     pdf.savefig(fig)
