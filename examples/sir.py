@@ -15,8 +15,8 @@ from sys import argv
 
 class SIR(CA):
     def rule(self, x, y):
-        s = self[x][y]
-        n = neighbors8(self, x, y, old=True)
+        s = self[x, y]
+        n = neighbors8(self, x, y)
 
         inf = 0
         suc = 0
@@ -39,7 +39,7 @@ class SIR(CA):
         elif s == 2: return 2
 
     def prettyPrint(self, x, y):
-        return b"\033[%dm  \033[m" % (41+self[x][y])
+        return b"\033[%dm  \033[m" % (41+self[x, y])
 
 c = SIR(30, values=(1, 1, 1, 1, 1, 0, 2))
 
@@ -49,6 +49,7 @@ try:
             draw(c)
             step(c)
             sleep(0.3)
-    else: plot(c, N=50, colors=['red', 'green', 'orange'], out='sir.pdf')
+    else: plot(c, N=50, colors=['red', 'green', 'orange'], out='sir.pdf',
+                graphic=True, vmax=2)
 
 except KeyboardInterrupt: pass

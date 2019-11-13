@@ -35,6 +35,8 @@ cdef class CA:
     cdef int **domain;
     cdef int **old;
     cdef int domain_size;
+    # values: List[int] # this may bring problems in the future
+    cdef public object values;
 
     def __cinit__(self, size, values=2, random_values=True, random_seed=True):
         """
@@ -123,17 +125,27 @@ cdef class CA:
 
     def getOld(self, ind, indy=None):
         """
-        Returns the column `ind` of the previous state. Used to mimic
-        the __getitem__ functionality with self[x][y].
+        This functions operates in two ways:
+
+        1- parameter `indy` is not given:
+        Returns the column `ind` of the previous state.
+
+        2- parameter `indy` is given:
+        Returns the position at (ind, indy) of the previous state.
         """
-        if not indy:
+        if indy == None:
             return [self.old[ind][i] for i in range(0, self.domain_size)]
         else: return self.old[ind][indy]
 
     def __getitem__(self, ind):
         """
-        Returns the column `ind` of the current state. This was made so that
-        `self[x][y]` becomes the primary way of accessing a value at [x, y].
+        This function operates in two ways:
+
+        1- Ind is a number:
+        Returns the column `ind` of the current state. 
+
+        2- Ind is an iterable:
+        Returns the value at (ind[0], ind[1]) of the current state.
         """
         if isinstance(ind, Iterable):
             return self.domain[ind[0]][ind[1]]
@@ -261,8 +273,8 @@ cdef class CA:
         """
 
         cdef int i, j
-        for i in range(0, self.domain_size):
-            for j in range(0, self.domain_size):
+        for j in range(0, self.domain_size):
+            for i in range(0, self.domain_size):
                 printf("%s", self.prettyPrint(i, j))
             printf("\n")
 
@@ -357,41 +369,104 @@ def neighbors8(obj, x, y, **kwargs):
 try:
     import matplotlib.pyplot as plt
     from matplotlib.colors import LinearSegmentedColormap
+    from matplotlib.cm import ScalarMappable
     from matplotlib.backends.backend_pdf import PdfPages
 
-    def plot(obj, colors=None, N=10, fontsize=16, out='out.pdf'):
+    def plot(obj, colors=None, N=10, fontsize=16, out='out.pdf', vmax=0,
+             graphic=False, **kwargs):
         """
         Plots k<=`N` iterations of `obj` into a pdf `out` with colors `colors`.
+
+        Use keyword argument `vmax` to set the maximum possible value in the CA
+        if it wasn't included in the object's initialization.
+
+        Setting keyword argument `graphic` to True will plot an additional
+        graphic, at the end, showing the concentration of each different 
+        population during the simulation.
         """
 
         if isinstance(obj, CA):
             if colors != None:
                 cmap = LinearSegmentedColormap.from_list(
-                    'my_colormap', colors, N=len(obj.values))
+                    'my_colormap', colors, N=(vmax or max(obj.values))+1)
 
             else: cmap = None
 
             i = 0
             with PdfPages(out) as pdf:
-                while (not obj.stationary() and i < N):
-                    fig = plt.figure(figsize=(10, 7))
-                    plt.axis([0, len(obj)]*2)
-                    plt.title('CA Plot')
-                    plt.xlabel('x', fontsize=fontsize)
-                    plt.ylabel('y', fontsize=fontsize)
 
-                    plt.imshow(
-                        obj.getMatrix(), interpolation='nearest',
-                        vmin=min(obj.values), vmax=max(obj.values),
-                        origin='lower',cmap=cmap
+                if not graphic:
+                    while (not obj.stationary() and i < N):
+                        fig = plt.figure(figsize=(10, 7))
+                        plt.axis([0, len(obj)]*2)
+                        plt.title('CA Plot')
+                        plt.xlabel('x', fontsize=fontsize)
+                        plt.ylabel('y', fontsize=fontsize)
+
+                        plt.imshow(
+                            obj.getMatrix(), interpolation='nearest',
+                            vmin=min(obj.values), vmax=vmax or max(obj.values),
+                            origin='lower', cmap=cmap, **kwargs
+                        )
+
+                        plt.colorbar()
+
+                        pdf.savefig(fig)
+                        plt.close(fig)
+                        step(obj)
+                        i += 1
+                else:
+                    v = (vmax or max(obj.values)) + 1
+                    popcount = []
+
+                    while (not obj.stationary() and i < N):
+                        popcount.append([0]*v)
+                        fig = plt.figure(figsize=(10, 7))
+                        plt.axis([0, len(obj)]*2)
+                        plt.title('CA Plot')
+                        plt.xlabel('x', fontsize=fontsize)
+                        plt.ylabel('y', fontsize=fontsize)
+
+                        plt.imshow(
+                            obj.getMatrix(), interpolation='nearest',
+                            vmin=min(obj.values), vmax=vmax or max(obj.values),
+                            origin='lower', cmap=cmap, **kwargs
+                        )
+
+                        plt.colorbar()
+
+                        for y in range(len(obj)):
+                            for x in range(len(obj)):
+                                popcount[i][obj[x, y]] += 1
+
+                        pdf.savefig(fig)
+                        plt.close(fig)
+                        step(obj)
+                        i += 1
+
+                    fig = plt.figure(figsize=(10, 7))
+                    plt.axis((0, i, 0, len(obj)**2))
+                    plt.title('Concentration of populations')
+                    plt.xlabel('Time', fontsize=fontsize)
+                    plt.ylabel('Concentration', fontsize=fontsize)
+                    
+                    sm = ScalarMappable(
+                        cmap=cmap or plt.rcParams['image.cmap'],
+                        norm=plt.Normalize(
+                            vmin=min(obj.values),
+                            vmax=max(obj.values)
+                        )
                     )
 
-                    plt.colorbar()
+                    for pop in range(v):
+                        plt.plot(
+                            range(i), [popcount[j][pop] for j in range(i)],
+                            color=sm.to_rgba(pop)
+                        )
 
+                    plt.colorbar(sm)
                     pdf.savefig(fig)
                     plt.close(fig)
-                    step(obj)
-                    i += 1
 
         else: raise TypeError("Object `obj` must be an instance/subclass of CA")
 

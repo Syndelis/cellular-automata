@@ -11,7 +11,7 @@ from sys import argv
 
 class CGL(CA):
     def prettyPrint(self, x, y):
-        return b"\033[%dm  \033[m" % (47+2*self[x][y])
+        return b"\033[%dm  \033[m" % (47+2*self[x, y])
 
 c = CGL(30)
 

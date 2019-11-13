@@ -18,9 +18,9 @@ class PO(CA):
     def rule(self, x, y):
         global k, p
 
-        neighbors = neighbors8(self, x, y, old=True)
+        neighbors = neighbors8(self, x, y)
         exc = len([i for i in neighbors if i == 1])
-        s = self[x][y]
+        s = self[x, y]
 
         if s == 0: # normal
             if (random() < p and exc >= 2):
@@ -30,7 +30,7 @@ class PO(CA):
         else: return (s+1) % k
 
     def prettyPrint(self, x, y):
-        return b"\033[%dm  \033[m" % (self[x][y] + 41)
+        return b"\033[%dm  \033[m" % (self[x, y] + 41)
 
 c = PO(30, values=k, random_values=False)
 c.add(1, points=[(10, 10)], size=(10, 10))

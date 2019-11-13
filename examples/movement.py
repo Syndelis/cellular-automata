@@ -21,5 +21,5 @@ class MOVE(CA):
             else: return s
         else: return s
 
-c = MOVE(30, values=[0]*600+[1])
-plot(c, N=50, out="move.pdf")
+c = MOVE(30, values=[0]*200+[1])
+plot(c, N=50, out="move.pdf", graphic=True)
