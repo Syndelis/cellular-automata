@@ -142,7 +142,7 @@ cdef class CA:
         This function operates in two ways:
 
         1- Ind is a number:
-        Returns the column `ind` of the current state. 
+        Returns the column `ind` of the current state.
 
         2- Ind is an iterable:
         Returns the value at (ind[0], ind[1]) of the current state.
@@ -381,7 +381,7 @@ try:
         if it wasn't included in the object's initialization.
 
         Setting keyword argument `graphic` to True will plot an additional
-        graphic, at the end, showing the concentration of each different 
+        graphic, at the end, showing the concentration of each different
         population during the simulation.
         """
 
@@ -422,7 +422,7 @@ try:
                     while (not obj.stationary() and i < N):
                         popcount.append([0]*v)
                         fig = plt.figure(figsize=(10, 7))
-                        plt.axis([0, len(obj)]*2)
+                        plt.axis([0, len(obj)-1]*2)
                         plt.title('CA Plot')
                         plt.xlabel('x', fontsize=fontsize)
                         plt.ylabel('y', fontsize=fontsize)
@@ -445,11 +445,11 @@ try:
                         i += 1
 
                     fig = plt.figure(figsize=(10, 7))
-                    plt.axis((0, i, 0, len(obj)**2))
+                    plt.axis((0, i-1, 0, len(obj)**2))
                     plt.title('Concentration of populations')
                     plt.xlabel('Time', fontsize=fontsize)
                     plt.ylabel('Concentration', fontsize=fontsize)
-                    
+
                     sm = ScalarMappable(
                         cmap=cmap or plt.rcParams['image.cmap'],
                         norm=plt.Normalize(
@@ -464,7 +464,9 @@ try:
                             color=sm.to_rgba(pop)
                         )
 
+                    sm.set_array(obj.values)
                     plt.colorbar(sm)
+
                     pdf.savefig(fig)
                     plt.close(fig)
 
