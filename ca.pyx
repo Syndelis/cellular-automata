@@ -47,7 +47,7 @@ cdef class CA:
         values: Integer representing the amount of different states
             (starting from 0) or Iterable (list, tuple, dict, set, ...)
             of integers containing all desired starting states.
-        random: Boolean for randomness or fixed seed or Integer for the seed
+        random: Boolean for randomness or fixed seed, or Integer for the seed
             you want to use.
         """
 
