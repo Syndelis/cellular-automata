@@ -1,4 +1,10 @@
-from ca import *
+try:
+    from ca import *
+
+except ModuleNotFoundError:
+    from sys import path
+    path.insert(0, '..')
+    from ca import *
 from random import randint
 from time import sleep
 
