@@ -7,3 +7,4 @@ main
 ca.cpython*.*
 /examples/*.pdf
 /rulesets/ca.c
+ca.c
