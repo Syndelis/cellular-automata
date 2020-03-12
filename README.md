@@ -42,4 +42,8 @@ plot(c)
 If you run the above example, you'll get something that looks like this
 ![](https://i.imgur.com/fDZTkF6.png)
 <br />
-For more examples 
+For more examples to help you understand the parameters and how they work, check the examples folder. You may also check the description of methods and classes with the `help()` function.
+```python
+>>> import ca
+>>> help(ca)
+```
