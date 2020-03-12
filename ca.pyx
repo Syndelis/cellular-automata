@@ -3,6 +3,7 @@ from libc.stdlib cimport malloc, free, rand, srand
 from libc.time cimport time
 from collections.abc import Iterable
 from typing import Callable
+from random import random
 
 cdef class CA:
     """
@@ -142,7 +143,7 @@ cdef class CA:
         This function operates in two ways:
 
         1- Ind is a number:
-        Returns the column `ind` of the current state. 
+        Returns the column `ind` of the current state.
 
         2- Ind is an iterable:
         Returns the value at (ind[0], ind[1]) of the current state.
@@ -261,6 +262,63 @@ cdef class CA:
                     self.domain[(x+i) % self.domain_size]\
                                [(y+j) % self.domain_size] = value
 
+    cpdef void addrandomvalues(self, value: int=0, state: int=0, N: int=10, p: float=1):
+       """
+       addrandomvalues(self, value: int=0, state: int=0, N: int=10, p: float=1):
+
+       value: The integer value you want to assign to multiple random cells.
+       state: The integer state that can be overwritten.
+       N: An integer representing the number of attempts made.
+       p: A float between 0 and 1 representing the probability of assignment the value where cells have the state passed
+       as an argument.
+
+
+       Assigns `value` for every randomly generated cell with the state given
+
+       This function should not be overwritten, as the behavior is already
+       generic enough.
+       """
+       cdef int i, j
+       cdef int x, y
+       N = self.domain_size
+       i = 0
+       j = 0
+       if (p < 0): p = 0
+       if (p > 1): p = 1
+
+       while (random() < p and i < N):
+           x = rand() % self.domain_size
+           y = rand() % self.domain_size
+
+           while (j < self.domain_size**2 and self.domain[x][y] != state):
+               x = rand() % self.domain_size
+               y = rand() % self.domain_size
+               j += 1
+
+           if (j != self.domain_size**2):
+               self.domain[x][y] = value
+           i += 1
+
+    cpdef list events(self, odds=1.):
+       """
+           cpdef list __events__(self, odds=1.):
+           Return true or false for a list of probabilities representing a sequence of probabilistic events.
+
+           odds: List of probabilities (values between 0 and 1)
+       """
+       odds_l = []
+        # Test odds values to verify negative values?
+       if isinstance(odds, float):
+           if random() < odds: return [True]
+           else: return [False]
+       elif isinstance(odds, Iterable):
+           for i in odds:
+               if random() < i: odds_l.append(True)
+               else: odds_l.append(False)
+           return odds_l
+       else: raise TypeError(
+               "`odds` parameter must be either an int or "
+               "Iterable. Was %s" % str(type(odds)))
 
     cpdef void __draw__(self) except *:
         """
@@ -336,6 +394,29 @@ cdef class CA:
                 )
             ]
 
+    cpdef list __neighbors8_states__(self, x, y, old=False, n_states = 1):
+        """
+        Called by function `ca.neighbors8_states`
+        Return a list containing the number of neighbors in each state.
+        """
+        numbers = [0 for i in range(1,n_states+1)]
+        if old:
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    if not(i == 0 and j == 0):
+                        for k in range(1,n_states+1):
+                            if self.old[(i+x) % self.domain_size][(j+y) % self.domain_size] == k:
+                                numbers[k] = numbers[k] + 1
+            return numbers
+        else:
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    if not(i == 0 and j == 0):
+                        for k in range(1,n_states+1):
+                            if self.domain[(i+x) % self.domain_size][(j+y) % self.domain_size] == k:
+                                numbers[k] = numbers[k] + 1
+            return numbers
+
 cpdef void draw(obj):
     """
     Calls obj.__draw__()
@@ -366,6 +447,16 @@ def neighbors8(obj, x, y, **kwargs):
 
     else: raise TypeError("Object `obj` must be an instance/subclass of CA")
 
+cpdef list neighbors8_states(obj, x, y, old=False, n_states = 1):
+    """
+    Calls obj.__neighbors8_states__()
+    """
+
+    if isinstance(obj, CA):
+        return obj.__neighbors8_states__(x, y, old=old)
+
+    else: raise TypeError("Object `obj` must be an instance/subclass of CA")
+
 try:
     import matplotlib.pyplot as plt
     from matplotlib.colors import LinearSegmentedColormap
@@ -381,7 +472,7 @@ try:
         if it wasn't included in the object's initialization.
 
         Setting keyword argument `graphic` to True will plot an additional
-        graphic, at the end, showing the concentration of each different 
+        graphic, at the end, showing the concentration of each different
         population during the simulation.
         """
 
@@ -449,7 +540,7 @@ try:
                     plt.title('Concentration of populations')
                     plt.xlabel('Time', fontsize=fontsize)
                     plt.ylabel('Concentration', fontsize=fontsize)
-                    
+
                     sm = ScalarMappable(
                         cmap=cmap or plt.rcParams['image.cmap'],
                         norm=plt.Normalize(
