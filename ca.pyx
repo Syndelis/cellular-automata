@@ -394,17 +394,17 @@ cdef class CA:
                 )
             ]
 
-    cpdef list __neighbors8_states__(self, x, y, old=False, n_states = 1):
+    cpdef list __neighbors8_states__(self, x, y, old=False, n_states=1):
         """
         Called by function `ca.neighbors8_states`
         Return a list containing the number of neighbors in each state.
         """
-        numbers = [0 for i in range(1,n_states+1)]
+        numbers = [0 for i in range(0,n_states)]
         if old:
             for i in range(-1, 2):
                 for j in range(-1, 2):
                     if not(i == 0 and j == 0):
-                        for k in range(1,n_states+1):
+                        for k in range(0,n_states):
                             if self.old[(i+x) % self.domain_size][(j+y) % self.domain_size] == k:
                                 numbers[k] = numbers[k] + 1
             return numbers
@@ -412,7 +412,7 @@ cdef class CA:
             for i in range(-1, 2):
                 for j in range(-1, 2):
                     if not(i == 0 and j == 0):
-                        for k in range(1,n_states+1):
+                        for k in range(0,n_states):
                             if self.domain[(i+x) % self.domain_size][(j+y) % self.domain_size] == k:
                                 numbers[k] = numbers[k] + 1
             return numbers
@@ -447,13 +447,13 @@ def neighbors8(obj, x, y, **kwargs):
 
     else: raise TypeError("Object `obj` must be an instance/subclass of CA")
 
-cpdef list neighbors8_states(obj, x, y, old=False, n_states = 1):
+def neighbors8_states(obj, x, y, **kwargs):
     """
     Calls obj.__neighbors8_states__()
     """
 
     if isinstance(obj, CA):
-        return obj.__neighbors8_states__(x, y, old=old)
+        return obj.__neighbors8_states__(x, y, **kwargs)
 
     else: raise TypeError("Object `obj` must be an instance/subclass of CA")
 
@@ -464,7 +464,7 @@ try:
     from matplotlib.backends.backend_pdf import PdfPages
 
     def plot(obj, colors=None, N=10, fontsize=16, out='out.pdf', vmax=0,
-             graphic=False, **kwargs):
+             graphic=False, names=None, **kwargs):
         """
         Plots k<=`N` iterations of `obj` into a pdf `out` with colors `colors`.
 
@@ -509,6 +509,7 @@ try:
                 else:
                     v = (vmax or max(obj.values)) + 1
                     popcount = []
+                    maxv = 0
 
                     while (not obj.stationary() and i < N):
                         popcount.append([0]*v)
@@ -530,32 +531,45 @@ try:
                             for x in range(len(obj)):
                                 popcount[i][obj[x, y]] += 1
 
+                        for j in range(1,v):
+                            if popcount[i][j] > maxv:
+                                maxv = popcount[i][j]
+
                         pdf.savefig(fig)
                         plt.close(fig)
                         step(obj)
                         i += 1
 
                     fig = plt.figure(figsize=(10, 7))
-                    plt.axis((0, i, 0, len(obj)**2))
+                    plt.axis((0, i, 0, maxv))
                     plt.title('Concentration of populations')
                     plt.xlabel('Time', fontsize=fontsize)
                     plt.ylabel('Concentration', fontsize=fontsize)
 
-                    sm = ScalarMappable(
-                        cmap=cmap or plt.rcParams['image.cmap'],
-                        norm=plt.Normalize(
-                            vmin=min(obj.values),
-                            vmax=max(obj.values)
-                        )
-                    )
-
-                    for pop in range(v):
-                        plt.plot(
-                            range(i), [popcount[j][pop] for j in range(i)],
-                            color=sm.to_rgba(pop)
+                    if colors == None:
+                        sm = ScalarMappable(
+                            cmap=cmap or plt.rcParams['image.cmap'],
+                            norm=plt.Normalize(
+                                vmin=min(obj.values),
+                                vmax=max(obj.values)
+                            )
                         )
 
-                    plt.colorbar(sm)
+                    if names != None:
+                        for pop in range(1,v):
+                            plt.plot(
+                                range(i), [popcount[j][pop] for j in range(i)], label=names[pop],
+                                color=colors[pop]
+                            )
+                    else:
+                        for pop in range(1,v):
+                            plt.plot(
+                                range(i), [popcount[j][pop] for j in range(i)], label=pop,
+                                color=colors[pop]
+                            )
+
+                    #plt.colorbar(sm)
+                    plt.legend()
                     pdf.savefig(fig)
                     plt.close(fig)
 
