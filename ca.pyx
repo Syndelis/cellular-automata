@@ -280,13 +280,13 @@ cdef class CA:
        """
        cdef int i, j
        cdef int x, y
-       N = self.domain_size
+       N = self.domain_size # Reassignment of parameter. Old value not used
        i = 0
        j = 0
        if (p < 0): p = 0
        if (p > 1): p = 1
 
-       while (random() < p and i < N):
+       while (rand() < p and i < N):
            x = rand() % self.domain_size
            y = rand() % self.domain_size
 
@@ -301,10 +301,10 @@ cdef class CA:
 
     cpdef list events(self, odds=1.):
        """
-           cpdef list __events__(self, odds=1.):
-           Return true or false for a list of probabilities representing a sequence of probabilistic events.
+        cpdef list __events__(self, odds=1.):
+        Return true or false for a list of probabilities representing a sequence of probabilistic events.
 
-           odds: List of probabilities (values between 0 and 1)
+        odds: one/List of probabilities (values between 0 and 1)
        """
        odds_l = []
         # Test odds values to verify negative values?
@@ -319,7 +319,7 @@ cdef class CA:
            for i in odds:
                if rand() < i: odds_l.append(True)
                else: odds_l.append(False)
-               
+
            return odds_l
 
        else: raise TypeError(
