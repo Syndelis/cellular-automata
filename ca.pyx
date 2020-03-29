@@ -262,9 +262,9 @@ cdef class CA:
                     self.domain[(x+i) % self.domain_size]\
                                [(y+j) % self.domain_size] = value
 
-    cpdef void addrandomvalues(self, value: int=0, state: int=0, N: int=10, p: float=1):
+    cpdef void addrandomvalues(self, value: int=0, state: int=0, N: int=100, p: float=1):
        """
-       addrandomvalues(self, value: int=0, state: int=0, N: int=10, p: float=1):
+       addrandomvalues(self, value: int=0, state: int=0, N: int=100, p: float=1):
 
        value: The integer value you want to assign to multiple random cells.
        state: The integer state that can be overwritten.
@@ -280,7 +280,6 @@ cdef class CA:
        """
        cdef int i, j
        cdef int x, y
-       N = self.domain_size # Reassignment of parameter. Old value not used
        i = 0
        j = 0
        if (p < 0): p = 0
