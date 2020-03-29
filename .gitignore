@@ -1,11 +1,13 @@
 # ignore VSCode directory
 /.vscode/
 /build/
+/__pycache__/
 
 # ignore possibly built binary
 main
 ca.cpython*.*
 /examples/*.pdf
+/examples/__pycache__
 /rulesets/ca.c
 ca.c
 /ignore/*.*
