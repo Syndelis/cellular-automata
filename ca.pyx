@@ -311,14 +311,15 @@ cdef class CA:
 
        if isinstance(odds, float):
 
-           if random() < odds: return True
+           if rand() < odds: return True
            else: return False
 
        elif isinstance(odds, Iterable):
 
            for i in odds:
-               if random() < i: odds_l.append(True)
+               if rand() < i: odds_l.append(True)
                else: odds_l.append(False)
+               
            return odds_l
 
        else: raise TypeError(
