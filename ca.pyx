@@ -39,17 +39,26 @@ cdef class CA:
     # values: List[int] # this may bring problems in the future
     cdef public object values;
 
-    def __cinit__(self, size, values=2, random_values=True, random_seed=True):
+    def __cinit__(self, size, dimensions=2, values=2,
+                random_values=True, random_seed=True):
+
         """
         C-based initialization.
-        CA(self, size: int, values: int=2, random=True)
+        CA(self, size: int, dimensions: int=2, values: int=2, random=True)
 
         size: Integer representing the desired dimensions of the CA.
-        values: Integer representing the amount of different states
+        [dimensions]: Integer representing the amount of dimensions.
+            Currently, only 2 dimensions are supported and plottable. However,
+            1 dimension support is being worked on to produce results as seen
+            with Wolfram's CAs.
+        [values]: Integer representing the amount of different states
             (starting from 0) or Iterable (list, tuple, dict, set, ...)
             of integers containing all desired starting states.
-        random: Boolean for randomness or fixed seed, or Integer for the seed
-            you want to use.
+        [random_values]: Boolean that controls wether or not the CA should be
+            filled randomly with values in startup. Values used are defined via
+            the `values` parameter.
+        [random_seed]: Boolean for randomness or fixed seed, or Integer for the
+            seed you want to use.
         """
 
         cdef int i, j, k
