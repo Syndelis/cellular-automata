@@ -1,6 +1,8 @@
 from libc.stdio cimport printf, sprintf
-from libc.stdlib cimport malloc, free, rand, srand
+from libc.stdlib cimport malloc, calloc, free, rand, srand
 from libc.time cimport time
+from libc.string cimport memcmp, memcpy
+
 from collections.abc import Iterable
 from typing import Callable
 from random import random
@@ -33,11 +35,10 @@ cdef class CA:
 
     """
 
-    cdef int **domain;
-    cdef int **old;
-    cdef int domain_size;
-    # values: List[int] # this may bring problems in the future
-    cdef public object values;
+    cdef int **domain
+    cdef int **old
+    cdef int size
+    cdef public object values
 
     def __cinit__(self, size, dimensions=2, values=2,
                 random_values=True, random_seed=True):
@@ -62,65 +63,93 @@ cdef class CA:
         """
 
         cdef int i, j, k
-        self.domain_size = size
-        self.domain = <int **> malloc(size * sizeof(int*))
-        self.old = <int **> malloc(size * sizeof(int*))
+        self.size = size
         self.values: List[int]
+
+        # Argument Check: random_seed ------------------------------------------
         if isinstance(random_seed, bool):
-            if random_seed:
-                srand(time(NULL))
+            if random_seed: srand(time(NULL))
 
         elif isinstance(random_seed, int):
             srand(random_seed)
 
         else:
-            raise TypeError("Argumente `random` should be either bool or int.")
+            raise TypeError(
+                "Argument \033[4mrandom\033[m should be either bool or int.")
 
-        if type(values) == int:
-            self.values = list(range(values))
+        
+        # Memory allocation ----------------------------------------------------
+        self.domain = <int **> malloc(self.size * sizeof(int *))
+        self.old    = <int **> malloc(self.size * sizeof(int *))
 
-            if random_values:
+        for i in range(0, size):
+            self.domain[i] = <int *> calloc(self.size, sizeof(int))
+            self.old[i]    = <int *> calloc(self.size, sizeof(int))
+
+        # Argument Check: values -----------------------------------------------
+        if random_values:
+
+            if type(values) is int:
+
+                self.values = list(range(values))
+
                 for i in range(0, size):
-                    self.domain[i] = <int *> malloc(size * sizeof(int))
-                    self.old[i] = <int *> malloc(size * sizeof(int))
-
                     for j in range(0, size):
                         self.domain[i][j] = rand()%values
-                        self.old[i][j] = 0
 
-            else:
+            elif isinstance(values, Iterable):
+                k =  len(values)
+
+                self.values = values
+                
                 for i in range(0, size):
-                    self.domain[i] = <int *> malloc(size * sizeof(int))
-                    self.old[i] = <int *> malloc(size * sizeof(int))
-
-                    for j in range(0, size):
-                        self.domain[i][j] = 0
-                        self.old[i][j] = 0
-
-        elif isinstance(values, Iterable):
-            self.values = list(values)
-            k = len(values)
-
-            if random_values:
-                for i in range(0, size):
-                    self.domain[i] = <int *> malloc(size * sizeof(int))
-                    self.old[i] = <int *> malloc(size * sizeof(int))
-
                     for j in range(0, size):
                         self.domain[i][j] = values[rand()%k]
-                        self.old[i][j] = 0
+
             else:
+
+                raise TypeError(
+                    'Non [int, Iterable] '
+                    'parameter \033[4mvalues\033[m'
+                )
+
+
+        else:
+
+            if isinstance(values, Iterable):
+                k =  len(values)
+                
+                if k < self.size*self.size:
+                    raise TypeError(
+                        "Iterable of incorrect size passed for "
+                        "\033[4mvalues\033[m. "
+                        f"Should be {self.size}×{self.size} (={self.size**2})"
+                    )
+
+
+                self.values = values
+                
                 for i in range(0, size):
-                    self.domain[i] = <int *> malloc(size * sizeof(int))
-                    self.old[i] = <int *> malloc(size * sizeof(int))
-
                     for j in range(0, size):
-                        self.domain[i][j] = 0
-                        self.old[i][j] = 0
+                        self.domain[i][j] = values[i*self.size + j]
 
-        else: raise TypeError(
-            "`values` parameter must be either an int or "
-            "Iterable. Was %s" % str(type(values)))
+            else:
+                raise TypeError(
+                    'Non [int, Iterable] '
+                    'parameter \033[4mvalues\033[m'
+                )
+
+
+    def __dealloc__(self):
+        cdef int i
+
+        for i in range(0, self.size):
+            free(self.domain[i])
+            free(self.old[i])
+
+        free(self.domain)
+        free(self.old)
+
 
     cpdef list getMatrix(self):
         """
@@ -129,9 +158,10 @@ cdef class CA:
 
         cdef int i, j
         return [
-            [self.domain[i][j] for i in range(self.domain_size)]
-            for j in range(self.domain_size)
+            [self.domain[i][j] for i in range(self.size)]
+            for j in range(self.size)
         ]
+
 
     def getOld(self, ind, indy=None):
         """
@@ -144,8 +174,9 @@ cdef class CA:
         Returns the position at (ind, indy) of the previous state.
         """
         if indy == None:
-            return [self.old[ind][i] for i in range(0, self.domain_size)]
+            return [self.old[ind][i] for i in range(0, self.size)]
         else: return self.old[ind][indy]
+
 
     def __getitem__(self, ind):
         """
@@ -159,17 +190,23 @@ cdef class CA:
         """
         if isinstance(ind, Iterable):
             return self.domain[ind[0]][ind[1]]
+
         elif isinstance(ind, int):
-            return [self.domain[ind][i] for i in range(0, self.domain_size)]
+            return [self.domain[ind][i] for i in range(0, self.size)]
+
         else:
-            raise TypeError(f"Parameter `ind` must be either an int or an "
-                             "Iterable. Received `{type(ind)}`")
+            raise TypeError(
+                f"Parameter \033[4mind\033[m must be either an int or an "
+                f"Iterable. Received `{type(ind)}`"
+            )
+
 
     def __len__(self):
         """
         Returns the length of the domain.
         """
-        return self.domain_size
+        return self.size
+
 
     cpdef bytes prettyPrint(self, x, y):
         """
@@ -185,6 +222,7 @@ cdef class CA:
         """
         return b"%d " % self.domain[x][y]
 
+
     cpdef void move(self, x0, y0, x1, y1, clear=None):
         cdef int v0 = self.domain[x0][y0]
         cdef int v1
@@ -193,6 +231,7 @@ cdef class CA:
 
         self.domain[x0][y0] = v1
         self.domain[x1][y1] = v0
+
 
     cpdef int stationary(self):
         """
@@ -205,12 +244,12 @@ cdef class CA:
 
         cdef int i, j
 
-        for i in range(0, self.domain_size):
-            for j in range(0, self.domain_size):
-                if (self.domain[i][j] != self.old[i][j]):
-                    return False
+        for i in range(0, self.size):
+            if (memcmp(self.domain[i], self.old[i], self.size * sizeof(int)) != 0):
+                return False
 
         return True
+
 
     def rule(self, x, y):
         """
@@ -227,7 +266,7 @@ cdef class CA:
 
         k = sum(self.__neighbors8__(x, y, old=True))
 
-        if self[x][y] == 1:
+        if self.domain[x][y] == 1:
 
             # Any live cell with fewer than 2 or more than 3 neighbors dies,
             # as if by underpopulation and overpopulation
@@ -240,6 +279,7 @@ cdef class CA:
             # as if by reproduction
             if k == 3: return 1
             else: return 0
+
 
     cpdef void add(self, value: int=0, points: Iterable=[], size: tuple=(1, 1)):
         """
@@ -266,10 +306,11 @@ cdef class CA:
 
         for p in points:
             x, y = p
+
             for i in range(0, dx):
                 for j in range(0, dy):
-                    self.domain[(x+i) % self.domain_size]\
-                               [(y+j) % self.domain_size] = value
+                    self.domain[(x+i) % self.size][(y+j) % self.size] = value
+
 
     cpdef void addrandomvalues(self, value: int=0, state: int=0, N: int=10, p: float=1):
        """
@@ -289,24 +330,25 @@ cdef class CA:
        """
        cdef int i, j
        cdef int x, y
-       N = self.domain_size # Reassignment of parameter. Old value not used
+       N = self.size # Reassignment of parameter. Old value not used
        i = 0
        j = 0
        if (p < 0): p = 0
        if (p > 1): p = 1
 
        while (rand() < p and i < N):
-           x = rand() % self.domain_size
-           y = rand() % self.domain_size
+           x = rand() % self.size
+           y = rand() % self.size
 
-           while (j < self.domain_size**2 and self.domain[x][y] != state):
-               x = rand() % self.domain_size
-               y = rand() % self.domain_size
+           while (j < self.size**2 and self.domain[x][y] != state):
+               x = rand() % self.size
+               y = rand() % self.size
                j += 1
 
-           if (j != self.domain_size**2):
+           if (j != self.size**2):
                self.domain[x][y] = value
            i += 1
+
 
     cpdef list events(self, odds=1.):
        """
@@ -323,6 +365,7 @@ cdef class CA:
            if rand() < odds: return True
            else: return False
 
+
        elif isinstance(odds, Iterable):
 
            for i in odds:
@@ -331,9 +374,11 @@ cdef class CA:
 
            return odds_l
 
+
        else: raise TypeError(
                "`odds` parameter must be either an int or "
                "Iterable. Was %s" % str(type(odds)))
+
 
     cpdef void __draw__(self) except *:
         """
@@ -346,10 +391,11 @@ cdef class CA:
         """
 
         cdef int i, j
-        for j in range(0, self.domain_size):
-            for i in range(0, self.domain_size):
+        for j in range(0, self.size):
+            for i in range(0, self.size):
                 printf("%s", self.prettyPrint(i, j))
             printf("\n")
+
 
     cpdef void __step__(self) except *:
         """
@@ -363,13 +409,14 @@ cdef class CA:
 
         cdef int i, j
 
-        for i in range(0, self.domain_size):
-            for j in range(0, self.domain_size):
-                self.old[i][j] = self.domain[i][j]
+        for i in range(0, self.size):
+            memcpy(self.old[i], self.domain[i], self.size * sizeof(int))
 
-        for i in range(0, self.domain_size):
-            for j in range(0, self.domain_size):
+
+        for i in range(0, self.size):
+            for j in range(0, self.size):
                 self.domain[i][j] = self.rule(i, j)
+
 
     cpdef list __neighbors8__(self, x, y, old=True, pos=False):
         """
@@ -382,55 +429,41 @@ cdef class CA:
         """
         if pos:
             return [
-                ((i+x) % self.domain_size, (j+y) % self.domain_size)
+                ((i+x) % self.size, (j+y) % self.size)
                 for i in range(-1, 2) for j in range(-1, 2)
                 if (not (i == 0 and j == 0))
             ]
 
+
         elif old:
             return [
-                self.old[(i+x) % self.domain_size][(j+y) % self.domain_size]
+                self.old[(i+x) % self.size][(j+y) % self.size]
                 for i in range(-1, 2) for j in range(-1, 2)
-                if (
-                    not (i == 0 and j == 0)
-                    # and (i+x >= 0 and i+x < self.domain_size)
-                    # and (j+y >= 0 and j+y < self.domain_size)
-                )
+                if (not (i == 0 and j == 0))
             ]
+
 
         else:
             return [
-                self.domain[(i+x) % self.domain_size][(j+y) % self.domain_size]
+                self.domain[(i+x) % self.size][(j+y) % self.size]
                 for i in range(-1, 2) for j in range(-1, 2)
-                if (
-                    not (i == 0 and j == 0)
-                    # and (i+x >= 0 and i+x < self.domain_size)
-                    # and (j+y >= 0 and j+y < self.domain_size)
-                )
+                if (not (i == 0 and j == 0))
             ]
+
 
     cpdef list __neighbors8_states__(self, x, y, old=False, n_states=1):
         """
         Called by function `ca.neighbors8_states`
         Return a list containing the number of neighbors in each state.
+
+        Deprecated. Use collections.Counter(neighbors8(self)) instead.
         """
-        numbers = [0 for i in range(0,n_states)]
-        if old:
-            for i in range(-1, 2):
-                for j in range(-1, 2):
-                    if not(i == 0 and j == 0):
-                        for k in range(0,n_states):
-                            if self.old[(i+x) % self.domain_size][(j+y) % self.domain_size] == k:
-                                numbers[k] = numbers[k] + 1
-            return numbers
-        else:
-            for i in range(-1, 2):
-                for j in range(-1, 2):
-                    if not(i == 0 and j == 0):
-                        for k in range(0,n_states):
-                            if self.domain[(i+x) % self.domain_size][(j+y) % self.domain_size] == k:
-                                numbers[k] = numbers[k] + 1
-            return numbers
+
+        raise Exception(
+            "Function removed. "
+            "Use collections.Counter(neighbors8(self)) instead."
+        )
+
 
 cpdef void draw(obj):
     """
@@ -477,6 +510,7 @@ try:
     from matplotlib.colors import LinearSegmentedColormap
     from matplotlib.cm import ScalarMappable
     from matplotlib.backends.backend_pdf import PdfPages
+    import matplotlib as mpl
 
     def plot(obj, colors=None, N=10, fontsize=16, out='out.pdf', vmax=0,
              graphic=False, names=None, **kwargs):
@@ -492,6 +526,7 @@ try:
         """
 
         if isinstance(obj, CA):
+
             if colors != None:
                 cmap = LinearSegmentedColormap.from_list(
                     'my_colormap', colors, N=(vmax or max(obj.values))+1)
