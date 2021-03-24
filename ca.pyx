@@ -512,6 +512,38 @@ try:
     from matplotlib.backends.backend_pdf import PdfPages
     import matplotlib as mpl
 
+    def plotPart(obj, colors=None, N=10, fontsize=16, vmax=0, **kwargs):
+
+        if colors != None:
+            cmap = LinearSegmentedColormap.from_list(
+                'my_colormap', colors, N=(vmax or max(obj.values))+1)
+
+        else: cmap = None
+
+        i = 0
+
+        while (not obj.stationary() and i < N):
+            fig = plt.figure(figsize=(10, 7))
+            plt.axis([0, len(obj)]*2)
+            plt.title('CA Plot')
+            plt.xlabel('x', fontsize=fontsize)
+            plt.ylabel('y', fontsize=fontsize)
+
+            plt.imshow(
+                obj.getMatrix(), interpolation='nearest',
+                vmin=min(obj.values), vmax=vmax or max(obj.values),
+                origin='lower', cmap=cmap, **kwargs
+            )
+
+            plt.colorbar()
+
+            yield fig
+
+            plt.close(fig)
+            step(obj)
+            i += 1
+
+
     def plot(obj, colors=None, N=10, fontsize=16, out='out.pdf', vmax=0,
              graphic=False, names=None, **kwargs):
         """
