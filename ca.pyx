@@ -41,7 +41,7 @@ cdef class CA:
     cdef public object values
 
     def __cinit__(self, size, dimensions=2, values=2,
-                random_values=True, random_seed=True):
+                random_values=True, random_seed=True, min=0, max=None):
 
         """
         C-based initialization.
@@ -65,6 +65,11 @@ cdef class CA:
         cdef int i, j, k
         self.size = size
         self.values: List[int]
+        self.min = min
+        self.max = max
+
+        if max is None:
+            self.max = len(values) if isinstance(values, Iterable) else (values-1)
 
         # Argument Check: random_seed ------------------------------------------
         if isinstance(random_seed, bool):
@@ -514,7 +519,7 @@ try:
     from matplotlib.backends.backend_pdf import PdfPages
     import matplotlib as mpl
 
-    def plotPart(obj, colors=None, N=10, fontsize=16, vmax=0, **kwargs):
+    def plotPart(obj, colors=None, N=10, fontsize=16, vmax=0, names=None, **kwargs):
 
         if colors != None:
             cmap = LinearSegmentedColormap.from_list(
@@ -523,27 +528,51 @@ try:
         else: cmap = None
 
         i = 0
+        span = list(range(obj.min, obj.max+1))
 
         while (not obj.stationary() and i < N):
-            fig = plt.figure(figsize=(10, 7))
-            plt.axis([0, len(obj)]*2)
-            plt.title('CA Plot')
-            plt.xlabel('x', fontsize=fontsize)
-            plt.ylabel('y', fontsize=fontsize)
 
-            plt.imshow(
+            fig, ax = plt.subplots()
+            cax = ax.imshow(
                 obj.getMatrix(), interpolation='nearest',
-                vmin=min(obj.values), vmax=vmax or max(obj.values),
-                origin='lower', cmap=cmap, **kwargs
+                vmin=obj.min, vmax=obj.max, cmap=cmap
             )
 
-            plt.colorbar()
+            ax.set_title('CA Plot')
+            ax.set_xlabel('x', fontsize=10)
+            ax.set_ylabel('y', fontsize=10)
+
+            cbar = fig.colorbar(cax, ticks=span)
+
+            if names:
+                cbar.ax.set_yticklabels(names)
 
             yield fig
 
             plt.close(fig)
             step(obj)
             i += 1
+
+            # fig = plt.figure(figsize=(10, 7))
+            # plt.axis([0, len(obj)]*2)
+            # plt.title('CA Plot')
+            # plt.xlabel('x', fontsize=fontsize)
+            # plt.ylabel('y', fontsize=fontsize)
+
+            # ax = fig.gca()
+            # cax = ax.imshow(
+            #     obj.getMatrix(), interpolation='nearest',
+            #     vmin=min(obj.values), vmax=vmax or max(obj.values),
+            #     origin='lower', cmap=cmap, **kwargs
+            # )
+
+            # plt.colorbar()
+
+            # yield fig
+
+            # plt.close(fig)
+            # step(obj)
+            # i += 1
 
 
     def plot(obj, colors=None, N=10, fontsize=16, out='out.pdf', vmax=0,
@@ -569,47 +598,20 @@ try:
 
             i = 0
             with PdfPages(out) as pdf:
+                figgen = plotPart(obj, colors=colors, N=N,
+                    fontsize=fontsize, vmax=vmax, names=names)
 
                 if not graphic:
-                    while (not obj.stationary() and i < N):
-                        fig = plt.figure(figsize=(10, 7))
-                        plt.axis([0, len(obj)]*2)
-                        plt.title('CA Plot')
-                        plt.xlabel('x', fontsize=fontsize)
-                        plt.ylabel('y', fontsize=fontsize)
+                    for fig in figgen: pdf.savefig(fig)
 
-                        plt.imshow(
-                            obj.getMatrix(), interpolation='nearest',
-                            vmin=min(obj.values), vmax=vmax or max(obj.values),
-                            origin='lower', cmap=cmap, **kwargs
-                        )
-
-                        plt.colorbar()
-
-                        pdf.savefig(fig)
-                        plt.close(fig)
-                        step(obj)
-                        i += 1
                 else:
-                    v = (vmax or max(obj.values)) + 1
+                    v = (obj.max - obj.min) + 1
                     popcount = []
                     maxv = 0
 
-                    while (not obj.stationary() and i < N):
+                    for fig in figgen:
                         popcount.append([0]*v)
-                        fig = plt.figure(figsize=(10, 7))
-                        plt.axis([0, len(obj)]*2)
-                        plt.title('CA Plot')
-                        plt.xlabel('x', fontsize=fontsize)
-                        plt.ylabel('y', fontsize=fontsize)
-
-                        plt.imshow(
-                            obj.getMatrix(), interpolation='nearest',
-                            vmin=min(obj.values), vmax=vmax or max(obj.values),
-                            origin='lower', cmap=cmap, **kwargs
-                        )
-
-                        plt.colorbar()
+                        pdf.savefig(fig)
 
                         for y in range(len(obj)):
                             for x in range(len(obj)):
@@ -619,9 +621,6 @@ try:
                             if popcount[i][j] > maxv:
                                 maxv = popcount[i][j]
 
-                        pdf.savefig(fig)
-                        plt.close(fig)
-                        step(obj)
                         i += 1
 
                     fig = plt.figure(figsize=(10, 7))
