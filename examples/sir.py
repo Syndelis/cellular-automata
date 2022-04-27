@@ -49,7 +49,11 @@ try:
             draw(c)
             step(c)
             sleep(0.3)
-    else: plot(c, N=50, colors=['red', 'green', 'orange'], out='sir.pdf',
-                graphic=True, vmax=2)
+    else:
+        plot(
+            c, N=50, out='sir.pdf', graphic=True, vmax=2,
+            colors=['red', 'green', 'orange'],
+            names=['infected', 'susceptible', 'immune']
+        )
 
 except KeyboardInterrupt: pass

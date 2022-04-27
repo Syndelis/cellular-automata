@@ -41,7 +41,7 @@ cdef class CA:
     cdef public object values
 
     def __cinit__(self, size, dimensions=2, values=2,
-                random_values=True, random_seed=True, min=0, max=None):
+                random_values=True, random_seed=True, min_=0, max_=None):
 
         """
         C-based initialization.
@@ -65,11 +65,11 @@ cdef class CA:
         cdef int i, j, k
         self.size = size
         self.values: List[int]
-        self.min = min
-        self.max = max
+        self.min = min_
+        self.max = max_
 
-        if max is None:
-            self.max = len(values) if isinstance(values, Iterable) else (values-1)
+        if max_ is None:
+            self.max = max(values) if isinstance(values, Iterable) else (values - 1)
 
         # Argument Check: random_seed ------------------------------------------
         if isinstance(random_seed, bool):
@@ -137,6 +137,9 @@ cdef class CA:
                 for i in range(0, size):
                     for j in range(0, size):
                         self.domain[i][j] = values[i*self.size + j]
+
+            elif type(values) is int:
+                self.values = list(range(values))
 
             else:
                 raise TypeError(
@@ -576,7 +579,7 @@ try:
 
 
     def plot(obj, colors=None, N=10, fontsize=16, out='out.pdf', vmax=0,
-             graphic=False, names=None, **kwargs):
+             graphic=False, names=None, plot_zero=True, **kwargs):
         """
         Plots k<=`N` iterations of `obj` into a pdf `out` with colors `colors`.
 
@@ -586,6 +589,11 @@ try:
         Setting keyword argument `graphic` to True will plot an additional
         graphic, at the end, showing the concentration of each different
         population during the simulation.
+
+        The keyword argument `plot_zero` is a boolean that determines if the
+        zero-th population should be plotted in the concentration graphic. For
+        Some CA's, the value zero might mean nothing rather than another
+        population, and as such may be an unwanted plot.
         """
 
         if isinstance(obj, CA):
@@ -629,7 +637,7 @@ try:
                     plt.xlabel('Time', fontsize=fontsize)
                     plt.ylabel('Concentration', fontsize=fontsize)
 
-                    if colors == None:
+                    if colors is None:
                         sm = ScalarMappable(
                             cmap=cmap or plt.rcParams['image.cmap'],
                             norm=plt.Normalize(
@@ -638,14 +646,17 @@ try:
                             )
                         )
 
+                        cm = sm.get_cmap()
+                        colors = [cm(i/(v-1)) for i in range(v)]
+
                     if names != None:
-                        for pop in range(1,v):
+                        for pop in range(1 - plot_zero, v):
                             plt.plot(
                                 range(i), [popcount[j][pop] for j in range(i)], label=names[pop],
                                 color=colors[pop]
                             )
                     else:
-                        for pop in range(1,v):
+                        for pop in range(1 - plot_zero, v):
                             plt.plot(
                                 range(i), [popcount[j][pop] for j in range(i)], label=pop,
                                 color=colors[pop]
